@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      position: relative;
+    }
+
+    .section {
+      width: 100%;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-align: center;
+    }
+
+    .header-text {
+      flex: 1;
+    }
+
+    .header img {
+      height: 80px;
+    }
+
+    .contact-info { /* This now only contains the date/time and is right-aligned */
+      font-size: 14px;
+      margin-top: 5px;
+      text-align: right; /* Align its content to the right */
+    }
+
+    .contact-info .bold-text {
+        font-weight: bold; /* Make sure date/time spans are bold */
+    }
+
+    hr {
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    /* Only vertical borders (column borders) for screen display */
+    th {
+      border-left: 1px solid #000;
+      border-right: 1px solid #000;
+      padding: 6px;
+      text-align: center;
+      background-color: #f2f2f2;
+    }
+
+    td {
+      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+      overflow: hidden;
+      white-space: nowrap; /* Keep content on a single line unless print styles override */
+    }
+
+    /* Optional: Add border to the first and last column edges for screen display */
+    th:first-child, td:first-child {
+      border-left: 1px solid #000;
+    }
+    th:last-child, td:last-child {
+      border-right: 1px solid #000;
+    }
+
+    td:focus {
+      outline: 2px solid #007bff;
+    }
+
+    .autocomplete-list {
+      border: 1px solid #ccc;
+      max-height: 120px;
+      overflow-y: auto;
+      position: absolute;
+      background: white;
+      z-index: 1000;
+      width: 200px; /* Default width, will be adjusted by JS */
+    }
+
+    .autocomplete-item {
+      padding: 5px;
+      cursor: pointer;
+      text-align: left; /* Align text in autocomplete list */
+    }
+
+    .autocomplete-item.highlighted {
+      background-color: #bde4ff;
+    }
+
+    #itemSection {
+      display: none; /* Hidden by default */
+      border: 1px solid #ccc;
+      padding: 15px;
+      position: absolute; /* Managed by JS for flexible positioning */
+      background-color: #f9f9f9;
+      overflow: auto;
+      z-index: 1001;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Add some shadow */
+      border-radius: 8px; /* Rounded corners */
+      resize: none; /* Disable default CSS resizing */
+    }
+
+    /* Style for the resize handles */
+    .resize-handle {
+        position: absolute;
+        background-color: #ccc;
+        z-index: 1002;
+        width: 15px;
+        height: 15px;
+        opacity: 0.7; /* Make them slightly transparent */
+        border-radius: 50%; /* Make them circular */
+    }
+
+    .resize-handle:hover {
+        opacity: 1;
+        background-color: #007bff; /* Highlight on hover */
+    }
+
+    .resize-handle.br { /* Bottom Right */
+        bottom: 0;
+        right: 0;
+        cursor: se-resize;
+    }
+    .resize-handle.bl { /* Bottom Left */
+        bottom: 0;
+        left: 0;
+        cursor: sw-resize;
+    }
+    .resize-handle.tr { /* Top Right */
+        top: 0;
+        right: 0;
+        cursor: ne-resize;
+    }
+    .resize-handle.tl { /* Top Left */
+        top: 0;
+        left: 0;
+        cursor: nw-resize;
+    }
+
+    #itemSection h3 {
+        margin-top: 0;
+        text-align: center;
+        color: #333;
+    }
+
+    #itemSection label {
+        display: inline-block; /* Keep labels and inputs inline */
+        width: 100px; /* Align labels */
+        text-align: right;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+
+    #itemSection input[type="text"] {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        width: 250px;
+        box-sizing: border-box;
+    }
+
+    #itemSection button {
+      margin: 10px 5px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #itemSection button:hover {
+      background-color: #0056b3;
+    }
+
+    #itemList {
+      margin-top: 20px;
+      max-height: calc(100% - 250px); /* Adjust max-height to be relative to parent */
+      overflow-y: auto;
+    }
+
+    #itemList table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    #itemList th, #itemList td {
+      border: 1px solid #aaa;
+      padding: 6px;
+      text-align: left;
+    }
+
+    /* Adjust width of Sl. No. column in item list*/
+    #itemList th:first-child,
+    #itemList td:first-child {
+        width: 50px; /* Small width for serial number */
+        text-align: center;
+    }
+
+    /* Style for the new Sl. No. column in the main billing table */
+    #billingTable th.serial-no, #billingTable td.serial-no {
+        width: 50px; /* Adjust width as needed */
+        text-align: center;
+    }
+
+
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 10px;
+    }
+    .form-group {
+      flex: 1 1 200px;
+    }
+
+    .customer-info {
+      display: flex;
+      align-items: center;
+      gap: 17px;
+      margin-bottom: 20px;
+      font-size: 16px;
+      flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    }
+
+    .customer-info label {
+      font-weight: bold;
+      min-width: 130px;
+    }
+
+    .customer-info input {
+      padding: 6px 10px;
+      width: 250px;
+      height: 20px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* FULL BORDER for table header */
+    #billingTable thead th {
+      border: 1px solid #000 !important;
+    }
+
+    /* FULL BORDER for total row (tfoot) */
+    #billingTable tfoot td {
+      border: 1px solid #000 !important;
+      padding: 6px;
+      font-weight: bold; /* Make total row text bold */
+    }
+
+    th.wide-desc, td:nth-child(3) { /* Changed to nth-child(3) for Description */
+      width: 220px; /* Width for screen display */
+      word-break: normal;
+      white-space: nowrap; /* Prevent wrapping in description for main table */
+      overflow: hidden;
+      text-overflow: ellipsis; /* Add ellipsis for overflow */
+    }
+
+    th.wide-amt, td:nth-child(12) { /* Changed to nth-child(12) for Amount */
+      width: 120px; /* Width for screen display */
+      word-break: normal;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* General buttons at the bottom */
+    .section > button {
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+      transition: background-color 0.3s ease;
+    }
+
+    .section > button:hover {
+      background-color: #218838;
+    }
+
+    /* Print styles */
+    @page {
+      size: auto;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        margin: 20px;
+        font-size: 14px;
+      }
+      /* Shift the entire header slightly to the left for print */
+      .header {
+          margin-left: -35px; /* Increased negative margin-left for more shift */
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        border: 2px solid #000; /* Full table border for print */
+        table-layout: fixed;
+      }
+
+      /* Reverting table cell borders to previous state for print */
+      th, td {
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+        border-top: none; /* Revert to previous setting */
+        border-bottom: none; /* Revert to previous setting */
+        padding: 6px;
+        font-size: 12px;
+        word-wrap: break-word; /* Keep text wrapping for readability */
+        white-space: normal; /* Keep normal white-space for readability */
+        overflow: visible; /* Ensure content is not hidden */
+        text-overflow: clip; /* No ellipsis in print */
+      }
+
+      /* Revert top and bottom borders logic for entire table in print */
+      tr:first-child th,
+      tr:first-child td {
+        border-top: 1px solid #000;
+      }
+
+      tr:last-child td {
+        border-bottom: 1px solid #000;
+      }
+
+      /* Revert specific width adjustments for print to screen defaults */
+      th.wide-desc, td:nth-child(3) { /* Changed to nth-child(3) for Description */
+        width: 220px; /* Reverted to screen width for print */
+      }
+      th.wide-amt, td:nth-child(12) { /* Changed to nth-child(12) for Amount */
+        width: 120px; /* Reverted to screen width for print */
+      }
+
+      button,
+      #itemSection,
+      #autocompleteList,
+      .resize-handle { /* Hide resize handle in print */
+        display: none !important; /* Hide interactive elements on print */
+      }
+      /* Ensure date/time are visible and bold in print */
+      .contact-info .bold-text { /* Use the specific class for bold */
+          display: inline !important; /* Override display: none if any */
+          font-weight: bold !important; /* Force bold in print */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <div class="header">
+      <img src="photo.jpg" alt="Clinic Logo">
+      <div class="header-text">
+        <h2 style="margin: 0;">MEDICO CLINIC</h2>
+        <div style="font-size: 18px;">Dudhsar, Nowda</div>
+        <div style="font-size: 16px;">Murshidabad - 742174, West Bengal</div>
+        <div style="font-size: 14px; margin-top: 5px;">Phone: 8016735324 &nbsp; | &nbsp; Email: firojsk@gmail.com</div>
+      </div>
+    </div>
+    <div class="contact-info">
+        Date: <span id="currentDate" class="bold-text"></span> &nbsp; | &nbsp; Time: <span id="currentTime" class="bold-text"></span>
+    </div>
+    <hr>
+
+    <div class="customer-info">
+      <label for="customerName">Customer Name:</label>
+      <input type="text" id="customerName" placeholder="Enter name" onkeydown="nextInput(event, 'customerPhone')">
+
+      <label for="customerPhone">Phone Number:</label>
+      <input type="text" id="customerPhone" placeholder="Enter phone number" onkeydown="focusFirstBillingCell(event)">
+    </div>
+
+    <table id="billingTable">
+      <thead>
+        <tr>
+          <th class="serial-no" style="font-weight: bold;">Sl. No.</th>
+          <th style="width: 30px; font-weight: bold;">Qty</th>
+          <th class="wide-desc">Description</th>
+          <th style="width: 50px;">Pack</th>
+          <th style="width: 50px;">MFG</th>
+          <th style="width: 60px;">Batch</th>
+          <th style="width: 60px;">Exp</th>
+          <th style="width: 60px;">MRP</th>
+          <th style="width: 60px;">Disc</th>
+          <th style="width: 60px;">CGST</th>
+          <th style="width: 60px;">SGST</th>
+          <th class="wide-amt">AMOUNT</th>
+        </tr>
+      </thead>
+      <tbody id="billingTableBody">
+        <!-- Initial rows will be populated by JavaScript after window.onload -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="11" style="text-align: right; font-weight: bold;">Total Amount:</td>
+          <td id="totalAmount">0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <button onclick="document.getElementById('itemSection').style.display='block'">Add Items</button>
+    <button onclick="addRow()">Add Row</button>
+    <button onclick="window.print()">Print</button>
+  </div>
+
+  <div id="itemSection">
+
+    <h3>Add Item Info</h3>
+
+    <label>Description: </label><input type="text" id="itemDesc" onkeydown="nextInput(event, 'itemPack')"><br>
+    <label>Pack: </label><input type="text" id="itemPack" onkeydown="nextInput(event, 'itemMFG')"><br>
+    <label>MFG: </label><input type="text" id="itemMFG" onkeydown="nextInput(event, 'itemMRP')"><br>
+    <label>MRP: </label><input type="text" id="itemMRP" onkeydown="nextInput(event, 'itemEXP')"><br>
+    <label>Exp Date: </label><input type="text" id="itemEXP" onkeydown="nextInput(event, 'itemBatch')"><br>
+    <label>Batch No: </label><input type="text" id="itemBatch" onkeydown="nextInput(event, 'addBtn')"><br>
+    <button id="addBtn" onclick="addItem()">Add</button>
+    <button onclick="removeItem()">Remove</button>
+    <button onclick="showItems()">Show Data</button>
+    <button id="closeItemSection" aria-label="Close" style="margin-left: 5px;">Close</button>
+
+    <div>
+        <label for="itemSectionSearch" style="font-weight: bold; margin-right: 10px;">Search:</label>
+        <input type="text" id="itemSectionSearch" placeholder="Search items in list" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 250px;">
+    </div>
+
+    <div id="itemList"></div>
+    <div class="resize-handle br"></div>
+    <div class="resize-handle bl"></div>
+    <div class="resize-handle tr"></div>
+    <div class="resize-handle tl"></div>
+  </div>
+
+  <div id="autocompleteList" class="autocomplete-list" style="display: none;"></div>
+
+  <script>
+    // Load items from local storage, or initialize as an empty object
+    let items = JSON.parse(localStorage.getItem("itemsData")) || {};
+    const table = document.getElementById("billingTable");
+    const billingTableBody = document.getElementById("billingTableBody"); // Get the tbody element
+
+    // Define column indices for clarity
+    const SL_NO_INDEX = 0; // New Serial Number column
+    const QTY_INDEX = 1;
+    const DESC_INDEX = 2;
+    const PACK_INDEX = 3;
+    const MFG_INDEX = 4;
+    const BATCH_INDEX = 5;
+    const EXP_INDEX = 6;
+    const MRP_INDEX = 7;
+    const DISC_INDEX = 8;
+    const CGST_INDEX = 9;
+    const SGST_INDEX = 10;
+    const AMOUNT_INDEX = 11;
+    // Number of contenteditable columns (Qty to Disc) - UPDATED
+    const EDITABLE_COLUMNS = 8; // (Qty, Desc, Pack, MFG, Batch, Exp, MRP, Disc)
+
+    // Resizing variables and constants
+    const itemSection = document.getElementById('itemSection');
+    let isResizing = null; // Stores 'br', 'bl', 'tr', 'tl'
+    let startX, startY, startWidth, startHeight, startLeft, startTop;
+
+    const MIN_WIDTH = 600; // Minimum width for the item section
+    const MAX_WIDTH_PERCENT = 0.95; // Max width as a percentage of window width
+    const MIN_HEIGHT = 350; // Minimum height for the item section
+    const MAX_HEIGHT_PERCENT = 0.95; // Max height as a percentage of window height
+
+    // Set initial size and position of itemSection when it's first displayed (or on load if not hidden initially)
+    function initializeItemSectionSize() {
+        if (!itemSection.style.width) { // Only set if not already set by resizing
+            const initialWidth = 730;
+            const initialHeight = 420;
+            itemSection.style.width = initialWidth + 'px';
+            itemSection.style.height = initialHeight + 'px';
+            // Calculate initial centered position
+            itemSection.style.left = ((window.innerWidth - initialWidth) / 2) + 'px';
+            itemSection.style.top = '150px'; // Keep original top position
+        }
+    }
+
+    /**
+     * Attaches event listeners to all contenteditable cells in the billing table.
+     * This function should be called after initial rows are added and after new rows are added.
+     */
+    function attachCellEventListeners() {
+      table.querySelectorAll('tbody td[contenteditable="true"]').forEach((cell) => {
+        // Prevent multiple listeners if called again
+        cell.removeEventListener('input', handleCellInput);
+        cell.removeEventListener('keydown', handleCellKeydown);
+        
+        cell.addEventListener('input', handleCellInput);
+        cell.addEventListener('keydown', handleCellKeydown);
+      });
+    }
+
+    /**
+     * Handles input events for contenteditable cells, pre-filling data and recalculating.
+     * @param {Event} e - The input event.
+     */
+    function handleCellInput(e) {
+        const cell = e.target;
+        const row = cell.parentElement;
+        const cells = row.querySelectorAll('td');
+        const desc = cells[DESC_INDEX].innerText.trim();
+
+        // If the description cell is being edited and an item exists, pre-fill other fields
+        if (cell.cellIndex === DESC_INDEX && items[desc]) {
+            cells[PACK_INDEX].innerText = items[desc].pack || "";
+            cells[MFG_INDEX].innerText = items[desc].mfg || "";
+            cells[BATCH_INDEX].innerText = items[desc].batch || "";
+            cells[EXP_INDEX].innerText = items[desc].exp || "";
+            cells[MRP_INDEX].innerText = items[desc].mrp || "";
+        }
+        calculateAndUpdateRow(row); // Always recalculate the row totals after any input
+        updateSerialNumbers(); // Update serial numbers after any input
+    }
+
+    /**
+     * Handles keydown events for contenteditable cells, especially for navigation.
+     * @param {Event} e - The keydown event.
+     */
+    function handleCellKeydown(e) {
+        const cell = e.target;
+        const allEditableCells = Array.from(table.querySelectorAll('tbody td[contenteditable="true"]'));
+        const currentIndex = allEditableCells.indexOf(cell);
+
+        if (e.key === "Enter") {
+            e.preventDefault();
+
+            const currentCol = cell.cellIndex;
+
+            if (currentCol === DESC_INDEX && autocompleteList.style.display === "block" && billingFocus > -1) {
+                // Autocomplete selection will handle focus movement
+                return;
+            } else if (currentCol === DISC_INDEX) {
+                const nextRow = cell.parentElement.nextElementSibling;
+                if (nextRow) {
+                    const firstCellOfNextRow = nextRow.querySelector('td[contenteditable="true"]');
+                    if (firstCellOfNextRow) {
+                        firstCellOfNextRow.focus();
+                    }
+                }
+            } else {
+                const currentRowCells = Array.from(cell.parentElement.querySelectorAll('td[contenteditable="true"]'));
+                const currentEditableIndexInRow = currentRowCells.indexOf(cell);
+                // Ensure we skip the Sl. No. column (index 0) if it's not editable.
+                // The first editable cell in a row is QTY_INDEX (1)
+                const nextEditableIndexInRow = currentEditableIndexInRow + 1;
+
+                if (nextEditableIndexInRow < currentRowCells.length) {
+                    currentRowCells[nextEditableIndexInRow].focus();
+                } else if (cell.cellIndex === DISC_INDEX) { // If it's the last editable cell in the row
+                    const nextRow = cell.parentElement.nextElementSibling;
+                    if (nextRow) {
+                        const firstEditableCellInNextRow = nextRow.querySelector(`td:nth-child(${QTY_INDEX + 1})[contenteditable="true"]`); // +1 because nth-child is 1-indexed
+                        if (firstEditableCellInNextRow) {
+                            firstEditableCellInNextRow.focus();
+                        }
+                    } else {
+                        // If it's the last row, add a new one
+                        addRow();
+                    }
+                }
+            }
+        } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            if (currentIndex + 1 < allEditableCells.length) allEditableCells[currentIndex + 1].focus();
+        } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            if (currentIndex - 1 >= 0) allEditableCells[currentIndex - 1].focus();
+        } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            // Calculate index for cell directly below
+            // Assuming all rows have the same number of editable columns.
+            const currentCellIndexInRow = Array.from(cell.parentElement.children).indexOf(cell); // Including non-editable Sl.No.
+            const nextRow = cell.parentElement.nextElementSibling;
+            if (nextRow) {
+                const targetCell = nextRow.children[currentCellIndexInRow];
+                if (targetCell && targetCell.contentEditable === "true") { // Check if target cell is editable
+                    targetCell.focus();
+                } else if (nextRow.querySelector('td[contenteditable="true"]')) { // Fallback if exact column isn't editable
+                    nextRow.querySelector('td[contenteditable="true"]').focus();
+                }
+            }
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            // Calculate index for cell directly above
+            const currentCellIndexInRow = Array.from(cell.parentElement.children).indexOf(cell); // Including non-editable Sl.No.
+            const prevRow = cell.parentElement.previousElementSibling;
+            if (prevRow) {
+                const targetCell = prevRow.children[currentCellIndexInRow];
+                if (targetCell && targetCell.contentEditable === "true") { // Check if target cell is editable
+                    targetCell.focus();
+                } else if (prevRow.querySelector('td[contenteditable="true"]')) { // Fallback if exact column isn't editable
+                    prevRow.querySelector('td[contenteditable="true"]').focus();
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Calculates the total amount for a given row and updates the cells.
+     * CGST and SGST are displayed but not not added to the total calculation.
+     * @param {HTMLElement} row - The table row element.
+     */
+    function calculateAndUpdateRow(row) {
+      const cells = row.querySelectorAll('td');
+      const qty = parseFloat(cells[QTY_INDEX].innerText) || 0;
+      const mrp = parseFloat(cells[MRP_INDEX].innerText) || 0;
+      const disc = parseFloat(cells[DISC_INDEX].innerText) || 0;
+
+      // Calculate base amount after applying percentage discount
+      const amountBeforeDiscount = qty * mrp;
+      const discountAmount = amountBeforeDiscount * (disc / 100); // Apply discount as percentage
+      const baseAmount = amountBeforeDiscount - discountAmount;
+
+      if (qty || mrp || disc) {
+        // CGST and SGST are only displayed as "6%", not added to totalAmount calculation
+        const totalAmount = baseAmount; // Total amount is just base amount after discount
+
+        cells[CGST_INDEX].innerText = "6%"; // Display as percentage
+        cells[SGST_INDEX].innerText = "6%"; // Display as percentage
+        cells[AMOUNT_INDEX].innerText = totalAmount.toFixed(2);
+      } else {
+        // Clear calculated fields if base inputs are empty
+        cells[CGST_INDEX].innerText = "";
+        cells[SGST_INDEX].innerText = "";
+        cells[AMOUNT_INDEX].innerText = "";
+      }
+      updateTotal(); // Always update the grand total after any row calculation
+    }
+
+    /**
+     * Calculates and updates the grand total amount displayed in the table footer.
+     */
+    function updateTotal() {
+      let total = 0;
+      const rows = document.querySelectorAll("#billingTable tbody tr");
+      rows.forEach(row => {
+        const amountCell = row.cells[AMOUNT_INDEX];
+        const value = parseFloat(amountCell.innerText);
+        if (!isNaN(value)) {
+          total += value;
+        }
+      });
+      document.getElementById("totalAmount").innerText = total.toFixed(2);
+    }
+
+    /**
+     * Updates the serial numbers in the Sl. No. column of the main billing table.
+     * Serial numbers are only assigned if both Qty and Description are present.
+     */
+    function updateSerialNumbers() {
+        const rows = document.querySelectorAll("#billingTable tbody tr");
+        let serialCounter = 1;
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            const qty = cells[QTY_INDEX].innerText.trim();
+            const desc = cells[DESC_INDEX].innerText.trim();
+            const serialNoCell = cells[SL_NO_INDEX];
+
+            if (qty !== "" && desc !== "") {
+                serialNoCell.innerText = serialCounter++;
+            } else {
+                serialNoCell.innerText = "";
+            }
+        });
+    }
+
+    /**
+     * Adds a new item to the 'items' object in local storage and updates the display.
+     */
+    function addItem() {
+      const desc = document.getElementById("itemDesc").value.trim();
+      const pack = document.getElementById("itemPack").value.trim();
+      const mfg = document.getElementById("itemMFG").value.trim();
+      const mrp = document.getElementById("itemMRP").value.trim();
+      const exp = document.getElementById("itemEXP").value.trim();
+      const batch = document.getElementById("itemBatch").value.trim();
+
+      if (!desc || !pack || !mfg || !mrp || !exp || !batch) {
+        // Using a custom message box instead of alert()
+        showMessage("Please fill all fields to add an item.");
+        return;
+      }
+
+      items[desc] = { pack, mfg, mrp, exp, batch };
+      localStorage.setItem("itemsData", JSON.stringify(items));
+      showItems(); // Refresh the displayed item list
+
+      // Clear the input fields after adding
+      ["itemDesc", "itemPack", "itemMFG", "itemMRP", "itemEXP", "itemBatch"].forEach(id => {
+        document.getElementById(id).value = "";
+      });
+    }
+
+    /**
+     * Removes an item from local storage based on its description.
+     */
+    function removeItem() {
+      const desc = document.getElementById("itemDesc").value.trim();
+      if (!items[desc]) {
+        showMessage("Item not found in your stored data.");
+        return;
+      }
+      delete items[desc];
+      localStorage.setItem("itemsData", JSON.stringify(items));
+      showItems(); // Refresh the displayed item list
+      document.getElementById("itemDesc").value = ""; // Clear description field
+    }
+
+    /**
+     * Displays all stored items in a table within the item management section.
+     * Filters items based on a search query if provided.
+     * @param {string} searchQuery - Optional search string to filter items.
+     */
+    function showItems(searchQuery = '') {
+      const list = document.getElementById("itemList");
+      list.innerHTML = ""; // Clear previous content
+      const itemTable = document.createElement("table");
+      const headerRow = document.createElement("tr");
+
+      // Create table headers, including Sl. No.
+      ["Sl. No.", "Description", "Pack", "MFG", "MRP", "EXP", "Batch"].forEach(h => {
+        const th = document.createElement("th");
+        th.textContent = h;
+        headerRow.appendChild(th);
+      });
+      itemTable.appendChild(headerRow);
+
+      const lowerCaseQuery = searchQuery.toLowerCase();
+      const filteredItems = Object.keys(items).filter(name =>
+        name.toLowerCase().includes(lowerCaseQuery) ||
+        Object.values(items[name]).some(val => String(val).toLowerCase().includes(lowerCaseQuery))
+      );
+
+      // Populate table with filtered items data, including Sl. No.
+      filteredItems.forEach((name, index) => {
+        const { pack, mfg, mrp, exp, batch } = items[name];
+        const tr = document.createElement("tr");
+        
+        // Add Sl. No. cell
+        const slNoTd = document.createElement("td");
+        slNoTd.textContent = index + 1; // 1-based indexing for serial number
+        tr.appendChild(slNoTd);
+
+        [name, pack, mfg, mrp, exp, batch].forEach(val => {
+          const td = document.createElement("td");
+          td.textContent = val;
+          tr.appendChild(td);
+        });
+        itemTable.appendChild(tr);
+      });
+      list.appendChild(itemTable);
+    }
+
+    /**
+     * Adds a new row to the billing table.
+     * This function will now add a new row every time it's called.
+     */
+    function addRow() {
+      const tbody = document.querySelector("#billingTable tbody");
+      
+      const tr = document.createElement("tr");
+      for (let i = 0; i < 12; i++) { // 12 columns in total after adding Sl. No.
+        const td = document.createElement("td");
+        if (i === SL_NO_INDEX) {
+            td.classList.add("serial-no"); // Add class for styling
+        } else if (i >= QTY_INDEX && i <= DISC_INDEX) { // Columns from Qty to Disc are editable
+            td.contentEditable = "true";
+        }
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+
+      // Re-attach event listeners to all cells, including the new one
+      attachCellEventListeners();
+      updateSerialNumbers(); // Update serial numbers after adding a new row
+
+      // Focus on the first editable cell (Qty) of the newly added row
+      const firstEditableCellOfNewRow = tr.querySelector(`td:nth-child(${QTY_INDEX + 1})[contenteditable="true"]`);
+      if (firstEditableCellOfNewRow) {
+          firstEditableCellOfNewRow.focus();
+      }
+    }
+
+    /**
+     * Navigates to the next input field on 'Enter' key press.
+     * @param {Event} event - The keyboard event.
+     * @param {string} nextId - The ID of the next input element to focus.
+     */
+    function nextInput(event, nextId) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById(nextId).focus();
+      }
+    }
+
+    /**
+     * Focuses the first editable cell in the billing table on 'Enter' key press.
+     * Used after customer phone number input.
+     * @param {Event} event - The keyboard event.
+     */
+    function focusFirstBillingCell(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        // Focus on the Qty cell of the first row
+        const firstCell = document.querySelector(`#billingTable tbody tr td:nth-child(${QTY_INDEX + 1})[contenteditable='true']`);
+        if (firstCell) firstCell.focus();
+      }
+    }
+
+    // Autocomplete for Description in Billing Table
+    const autocompleteList = document.getElementById("autocompleteList");
+    let billingFocus = -1; // Index for highlighted autocomplete item
+
+    table.addEventListener("input", function (e) {
+      const cell = e.target;
+      // Only trigger autocomplete if the edited cell is the Description column
+      if (cell.cellIndex !== DESC_INDEX) {
+        autocompleteList.style.display = "none"; // Hide if not description cell
+        return;
+      }
+
+      const val = cell.innerText.trim().toLowerCase();
+      autocompleteList.innerHTML = ""; // Clear previous suggestions
+      billingFocus = -1; // Reset highlight
+
+      if (!val) {
+        autocompleteList.style.display = "none";
+        return;
+      }
+
+      // Position the autocomplete list below the current cell
+      const rect = cell.getBoundingClientRect();
+      autocompleteList.style.left = `${rect.left + window.scrollX}px`;
+      autocompleteList.style.top = `${rect.bottom + window.scrollY}px`;
+      autocompleteList.style.width = `${cell.offsetWidth}px`;
+
+      // Filter items that match the input value
+      const matches = Object.keys(items).filter(name => name.toLowerCase().includes(val));
+      if (matches.length === 0) {
+        autocompleteList.style.display = "none";
+        return;
+      }
+
+      // Create and append autocomplete items
+      matches.forEach(name => {
+        const div = document.createElement("div");
+        div.className = "autocomplete-item";
+        div.textContent = name; // Display full name in autocomplete list
+        div.addEventListener("mousedown", () => {
+          // This event is triggered on click or simulated on Enter
+          // Extract base name, removing content in parentheses
+          const baseName = name.split('(')[0].trim();
+          cell.innerText = baseName; // Set the cell text to the base name
+          
+          const row = cell.parentElement;
+          const cells = row.querySelectorAll("td");
+          // Fill other related fields using the original full 'name' as key
+          cells[PACK_INDEX].innerText = items[name].pack || "";
+          cells[MFG_INDEX].innerText = items[name].mfg || "";
+          cells[BATCH_INDEX].innerText = items[name].batch || "";
+          cells[EXP_INDEX].innerText = items[name].exp || "";
+          cells[MRP_INDEX].innerText = items[name].mrp || "";
+
+          calculateAndUpdateRow(row); // Recalculate row amounts
+          updateSerialNumbers(); // Update serial numbers after pre-filling
+          autocompleteList.style.display = "none"; // Hide autocomplete list
+
+          // After selection, move focus to the "Pack" column of the current row
+          const nextCell = cells[PACK_INDEX];
+          if (nextCell) {
+              nextCell.focus();
+          }
+        });
+        autocompleteList.appendChild(div);
+      });
+
+      autocompleteList.style.display = "block"; // Show autocomplete list
+    });
+
+    // Handle keyboard navigation (ArrowUp/Down, Enter) within the autocomplete list
+    table.addEventListener("keydown", function (e) {
+      const cell = e.target;
+      // Only process if the current cell is the description column AND the autocomplete list is visible
+      if (cell.cellIndex !== DESC_INDEX || autocompleteList.style.display === "none") {
+        return;
+      }
+
+      const listItems = autocompleteList.getElementsByClassName("autocomplete-item");
+      if (listItems.length === 0) return;
+
+      if (e.key === "ArrowDown") {
+        billingFocus++;
+        updateHighlight();
+        e.preventDefault(); // Prevent default browser scroll
+      } else if (e.key === "ArrowUp") {
+        billingFocus--;
+        updateHighlight();
+        e.preventDefault(); // Prevent default browser scroll
+      } else if (e.key === "Enter") {
+        if (billingFocus > -1 && listItems[billingFocus]) {
+          e.preventDefault(); // CRITICAL: Prevent default Enter behavior (new line, or general cell navigation)
+          listItems[billingFocus].dispatchEvent(new MouseEvent("mousedown")); // Simulate a click on the highlighted item
+          // The mousedown handler for the item will then update the cell and move focus.
+          return; // Stop further keydown processing after selection
+        }
+        // If Enter is pressed and no item is highlighted in the autocomplete list,
+        // allow the event to propagate to the cell's own keydown listener
+        // which will then handle general cell navigation (moving to the next cell in the row).
+      }
+    });
+
+    /**
+     * Updates the highlight (active item) in the autocomplete list.
+     */
+    function updateHighlight() {
+      const listItems = autocompleteList.getElementsByClassName("autocomplete-item");
+      // Remove highlight from all items
+      Array.from(listItems).forEach(item => item.classList.remove("highlighted"));
+
+      // Adjust billingFocus if it goes out of bounds
+      if (billingFocus >= listItems.length) billingFocus = 0;
+      if (billingFocus < 0) billingFocus = listItems.length - 1;
+
+      // Add highlight to the current item
+      if (listItems[billingFocus]) listItems[billingFocus].classList.add("highlighted");
+    }
+
+    // Hide autocomplete list if clicked outside
+    document.addEventListener("click", function (e) {
+      if (!autocompleteList.contains(e.target) && !table.contains(e.target)) {
+        autocompleteList.style.display = "none";
+      }
+    });
+
+    // Close button for itemSection
+    document.getElementById("closeItemSection").addEventListener("click", () => {
+      document.getElementById("itemSection").style.display = "none";
+    });
+
+    /**
+     * Simple custom message box function instead of alert().
+     * In a real app, this would be a more sophisticated modal.
+     * @param {string} message - The message to display.
+     */
+    function showMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #333;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 5px;
+            z-index: 9999;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            font-size: 16px;
+        `;
+        messageDiv.textContent = message;
+        document.body.appendChild(messageDiv);
+
+        setTimeout(() => {
+            document.body.removeChild(messageDiv);
+        }, 2000); // Message disappears after 2 seconds
+    }
+
+    /**
+     * Saves the current billing table data as a plain text file.
+     * This function is included in case you change your mind and re-add the button.
+     */
+    function saveBillAsText() {
+        let billContent = "";
+
+        // Clinic Header Info
+        billContent += "------------------------------------------------------------\n";
+        billContent += "                  MEDICO CLINIC\n";
+        billContent += "                Dudhsar, Nowda\n";
+        billContent += "          Murshidabad - 742174, West Bengal\n";
+        billContent += "Phone: 8016735324 | Email: firojsk@gmail.com\n";
+        billContent += "------------------------------------------------------------\n\n";
+
+        // Date and Time
+        const currentDate = document.getElementById("currentDate").textContent;
+        const currentTime = document.getElementById("currentTime").textContent;
+        billContent += `Date: ${currentDate} | Time: ${currentTime}\n\n`;
+
+        // Customer Info
+        const customerName = document.getElementById("customerName").value.trim();
+        const customerPhone = document.getElementById("customerPhone").value.trim();
+        if (customerName) billContent += `Customer Name: ${customerName}\n`;
+        if (customerPhone) billContent += `Phone Number: ${customerPhone}\n`;
+        billContent += "\n";
+
+        // Table Headers - UPDATED to include Sl. No.
+        const headers = Array.from(document.querySelectorAll("#billingTable thead th")).map(th => th.innerText.trim());
+        // Calculate appropriate padding for each header for text file alignment
+        const columnWidths = Array.from(document.querySelectorAll("#billingTable tbody tr:first-child td")).map((td, i) => {
+            // Find max width for each column based on content
+            let maxWidth = headers[i] ? headers[i].length : 0;
+            document.querySelectorAll(`#billingTable tbody tr`).forEach(row => {
+                if (row.cells[i]) {
+                    const cellText = row.cells[i].innerText.trim();
+                    maxWidth = Math.max(maxWidth, cellText.length);
+                }
+            });
+            // Use a sensible minimum for text export
+            if (i === SL_NO_INDEX) return Math.max(maxWidth, 5); // Small width for Sl. No.
+            if (i === DESC_INDEX) return Math.max(maxWidth, 25); // Larger minimum for description
+            if (i === AMOUNT_INDEX) return Math.max(maxWidth, 12); // Larger minimum for amount
+            return Math.max(maxWidth, 7); // Ensure a minimum width for other cells
+        });
+
+
+        const paddedHeaders = headers.map((h, i) => h.padEnd(columnWidths[i] + 2)).join(""); // +2 for padding between columns
+        billContent += paddedHeaders + "\n";
+        billContent += "-".repeat(paddedHeaders.length) + "\n";
+
+        // Table Body Rows
+        const rows = document.querySelectorAll("#billingTable tbody tr");
+        rows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            const rowData = cells.map((cell, i) => cell.innerText.trim()); // Get raw text
+            // Only include rows that have at least a quantity or description entered
+            // AND ensure it has a serial number (meaning it's a valid line item)
+            if (rowData[SL_NO_INDEX] !== "") { // Check Sl. No. existence for valid row
+                const paddedRowData = rowData.map((text, i) => text.padEnd(columnWidths[i] + 2)).join("");
+                billContent += paddedRowData + "\n";
+            }
+        });
+
+        // Total Amount
+        const totalAmount = document.getElementById("totalAmount").innerText;
+        billContent += "-".repeat(paddedHeaders.length) + "\n";
+        // Calculate total amount position based on column widths for alignment
+        const totalLabel = "Total Amount:";
+        const totalLabelPadding = paddedHeaders.length - totalLabel.length - totalAmount.length - 2; // -2 for some spacing
+        billContent += `${totalLabel}${totalAmount.padStart(totalLabelPadding + totalAmount.length)}\n`;
+
+
+        // Create a Blob and trigger download
+        const blob = new Blob([billContent], { type: 'text/plain;charset=utf-8' });
+        const customerFileName = customerName ? customerName.replace(/[^a-zA-Z0-9]/g, '_') : 'customer';
+        const date = new Date().toISOString().slice(0, 10); //YYYY-MM-DD
+        const filename = `Invoice_${customerFileName}_${date}.txt`;
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href); // Clean up the object URL
+
+        showMessage("Bill saved as text file!");
+    }
+
+
+    // Get the search input element inside itemSection
+    const itemSectionSearchInput = document.getElementById("itemSectionSearch");
+
+    // Add event listener for input on the search field within itemSection
+    itemSectionSearchInput.addEventListener('input', () => {
+        showItems(itemSectionSearchInput.value);
+    });
+
+    // Resize event listeners for itemSection
+    // Get all resize handles
+    const resizeHandleBR = itemSection.querySelector('.resize-handle.br');
+    const resizeHandleBL = itemSection.querySelector('.resize-handle.bl');
+    const resizeHandleTR = itemSection.querySelector('.resize-handle.tr');
+    const resizeHandleTL = itemSection.querySelector('.resize-handle.tl');
+
+    function startResize(e, direction) {
+        isResizing = direction;
+        startX = e.clientX;
+        startY = e.clientY;
+        startWidth = itemSection.offsetWidth;
+        startHeight = itemSection.offsetHeight;
+        startLeft = itemSection.offsetLeft;
+        startTop = itemSection.offsetTop;
+        e.preventDefault();
+    }
+
+    resizeHandleBR.addEventListener('mousedown', (e) => startResize(e, 'br'));
+    resizeHandleBL.addEventListener('mousedown', (e) => startResize(e, 'bl'));
+    resizeHandleTR.addEventListener('mousedown', (e) => startResize(e, 'tr'));
+    resizeHandleTL.addEventListener('mousedown', (e) => startResize(e, 'tl'));
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+
+        let newWidth = startWidth;
+        let newHeight = startHeight;
+        let newLeft = startLeft;
+        let newTop = startTop;
+
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        if (isResizing.includes('r')) { // Right side resize
+            newWidth = startWidth + deltaX;
+        }
+        if (isResizing.includes('b')) { // Bottom side resize
+            newHeight = startHeight + deltaY;
+        }
+        if (isResizing.includes('l')) { // Left side resize
+            newWidth = startWidth - deltaX;
+            newLeft = startLeft + deltaX;
+        }
+        if (isResizing.includes('t')) { // Top side resize
+            newHeight = startHeight - deltaY;
+            newTop = startTop + deltaY;
+        }
+
+        // Apply constraints for width and height
+        newWidth = Math.max(MIN_WIDTH, newWidth);
+        newHeight = Math.max(MIN_HEIGHT, newHeight);
+
+        // Ensure newLeft/newTop do not make element go off-screen
+        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - newWidth));
+        newTop = Math.max(0, Math.min(newTop, window.innerHeight - newHeight));
+
+
+        // Update CSS properties
+        itemSection.style.width = newWidth + 'px';
+        itemSection.style.height = newHeight + 'px';
+        itemSection.style.left = newLeft + 'px';
+        itemSection.style.top = newTop + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+        isResizing = null;
+    });
+
+    /**
+     * Updates the current date and time displayed in the header.
+     */
+    function updateDateTime() {
+        const now = new Date();
+        const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', dateOptions);
+        document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
+    }
+
+    /**
+     * Dynamically adds initial rows to the billing table.
+     */
+    function addInitialRows() {
+      const initialRowsCount = 12;
+      let rowsHtml = '';
+      for (let i = 0; i < initialRowsCount; i++) {
+        rowsHtml += `<tr>
+                      <td class="serial-no"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td contenteditable="true"></td>
+                      <td></td> <td></td> <td></td>
+                    </tr>`;
+      }
+      billingTableBody.innerHTML = rowsHtml;
+    }
+
+
+    // Initial display of items and total when the page loads
+    window.onload = function() {
+        addInitialRows(); // Add initial rows
+        attachCellEventListeners(); // Attach event listeners to the newly added cells
+        showItems(); // Display all items initially
+        updateTotal(); // Calculate total on load
+        updateSerialNumbers(); // Populate initial serial numbers
+        initializeItemSectionSize(); // Set initial size for resizable section
+        updateDateTime(); // Set initial date and time
+        setInterval(updateDateTime, 1000); // Update time every second
+    };
+  </script>
+
+</body></html>
